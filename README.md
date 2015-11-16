@@ -1,1 +1,1 @@
-#Android_RSS_¾\Åª¾¹
+#Android_RSS_Reader
