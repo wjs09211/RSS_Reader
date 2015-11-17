@@ -107,16 +107,19 @@ public class MainActivity extends AppCompatActivity
             }
         });
         //endregion
+
         load(); //讀檔
+
         //region sever檢查跟新---接收broadcast
         IntentFilter filter = new IntentFilter("myService"); //哪個key的訊息與Service對應
         MyReceiver Receiver = new MyReceiver();
-        registerReceiver(Receiver, filter);
+        registerReceiver(Receiver, filter);     //註冊接收broadcast
         //endregion
-        //updateAllFeed(); //thread跟新
-        startService();
+
+        //updateAllFeed(); //thread跟新   改成service所以註解掉
+        startService();//啟用service
     }
-    public class MyReceiver extends BroadcastReceiver {
+    public class MyReceiver extends BroadcastReceiver {     //接收broadcast
         @Override
         public void onReceive(Context context, Intent intent) {
             final Bundle bundle = intent.getExtras();   //接收的參數
@@ -140,13 +143,13 @@ public class MainActivity extends AppCompatActivity
                 }
             });
             t.start();
+            //region 通知欄
             NotificationManager mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(MainActivity.this);
             Intent intent2 = new Intent(context, MainActivity.class);
             // 建立大圖示需要的Bitmap物件
             Bitmap largeIcon = BitmapFactory.decodeResource(
                     getResources(), R.drawable.ic_grade_white);
-
             //PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
             mBuilder.setContentTitle("睡睡RSS")//設置通知欄標題
                     .setContentText(title + "已更新") //設置通知欄顯示內容
@@ -165,6 +168,7 @@ public class MainActivity extends AppCompatActivity
             Notification notification = mBuilder.build();
             notification.flags = Notification.FLAG_AUTO_CANCEL;
             mNotificationManager.notify(0, mBuilder.build());
+            //endregion
         }
     }
     public PendingIntent getDefalutIntent(int flags){
@@ -183,7 +187,7 @@ public class MainActivity extends AppCompatActivity
         //subMenu save
         if(feedMenu.size() > 0) {
             try {
-                FileOutputStream fos = openFileOutput("SubMenu.txt", MODE_PRIVATE);
+                FileOutputStream fos = openFileOutput("SubMenu.txt", MODE_PRIVATE); //(儲存的名稱,可覆蓋)
                 OutputStreamWriter osw = new OutputStreamWriter(fos);
                 BufferedWriter bw = new BufferedWriter(osw);
                 String[] str = feedMenu.getAllSubMenuTitle();
@@ -199,6 +203,7 @@ public class MainActivity extends AppCompatActivity
             } catch (IOException e) {
 
             }
+            //feed save
             try {
                 FileOutputStream fos = openFileOutput("Feed.txt", MODE_PRIVATE);
                 OutputStreamWriter osw = new OutputStreamWriter(fos);
@@ -257,7 +262,7 @@ public class MainActivity extends AppCompatActivity
         });
         t.start();
         try {
-            t.join();
+            t.join();   //等待所有資料讀取完畢
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -265,27 +270,19 @@ public class MainActivity extends AppCompatActivity
     //endregion
 
     //region 處理Rss訊息
-    public void showToast(final String toast)
-    {
-        runOnUiThread(new Runnable() {
-            public void run()
-            {
-                Toast.makeText(MainActivity.this, toast, Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
+    //因為component不能再thread裡更改，所以需要Handler的幫助
     public Handler mHandler = new Handler(){
         @Override
         public void handleMessage(Message msgg) {
             switch(msgg.what){
                 case 1:
-                    UpdateDisplay();
+                    UpdateDisplay();//更新listView
                     break;
             }
             super.handleMessage(msgg);
         }
     };
-    public RSSFeed getFeed(String urlToRssFeed)
+    public RSSFeed getFeed(String urlToRssFeed) //取得Feed(書上範例)
     {
         try
         {
@@ -345,6 +342,8 @@ public class MainActivity extends AppCompatActivity
 
         itemlist.setAdapter(adapter);
         // 设置监听器对item的选择进行响应
+
+        //點擊跳到ShowDescription畫面，顯示詳細資料
         itemlist.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -367,7 +366,7 @@ public class MainActivity extends AppCompatActivity
     }
     //endregion
 
-    //region thread跟新
+    //region thread跟新 因為不用這個了 所以懶得打註解
     public void updateAllFeed()
     {
         new Thread() {
@@ -423,9 +422,9 @@ public class MainActivity extends AppCompatActivity
     //endregion
     @Override
     public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);//左拉的選單
         if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
+            drawer.closeDrawer(GravityCompat.START);//關閉左拉的選單
         } else {
             super.onBackPressed();
         }
@@ -435,7 +434,7 @@ public class MainActivity extends AppCompatActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.main, menu);
-        addItem = menu.findItem(R.id.action_add);
+        addItem = menu.findItem(R.id.action_add);//取得星星的meun
         return true;
     }
 
@@ -448,17 +447,17 @@ public class MainActivity extends AppCompatActivity
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
-            Dialog d = onCreateDialogNumberPicker();
+            Dialog d = onCreateDialogNumberPicker();    //設定時間的Dialog
             d.show();
             return true;
-        }else if (id == R.id.action_add) {
+        }else if (id == R.id.action_add) {               //新增的 Dialog
             if (feed != null) {
                 if (!feedMenu.Isfind(feed)) {//沒有重複才能新增
                     Dialog d = onCreateDialogAdd();
                     d.show();
                 }
             }
-        }else if (id == R.id.action_refresh){
+        }else if (id == R.id.action_refresh){           //刷新的 Dialog
             new Thread() {
                 @Override
                 public void run() {
@@ -467,13 +466,13 @@ public class MainActivity extends AppCompatActivity
                         if(feedNew != null) {
                             if (!feedNew.getPubDate().equals(feed.getPubDate())) {
                                 showToast(feedNew.getTitle()+"更新");
-                                soundPool.play(alertId, 1, 1, 0, 1, 1);
+                                soundPool.play(alertId, 1, 1, 0, 1, 1); //聲音
                                 feed = feedNew;
-                                feedMenu.updateFeed(feed);
+                                feedMenu.updateFeed(feed);  //更新左拉menu
                                 Message msgg = new Message();
                                 msgg.what = 1;
                                 mHandler.sendMessage(msgg);
-                                stopService();
+                                stopService();  //重新啟動Service因為要更新資料
                                 startService();
                             }
                         }
@@ -494,22 +493,22 @@ public class MainActivity extends AppCompatActivity
             Dialog d = onCreateDialogDeleteItem();
             d.show();
         }
-        else if( id == Menu.FIRST+100002 ){
+        else if( id == Menu.FIRST+100002 ){ //AddGroup
             Dialog d = onCreateDialogAddGroup();
             d.show();
         }
-        else if( id == Menu.FIRST+100003 ){
+        else if( id == Menu.FIRST+100003 ){ //DeleteSubItem
             Dialog d = onCreateDialogDeleteSubItem();
             d.show();
         }
-        for ( int i = 0 ; i < feedMenu.size() ; i++ ) {
+        for ( int i = 0 ; i < feedMenu.size() ; i++ ) { //點選左拉的哪個Feed，顯示哪個Feed
             if (id == feedMenu.getmenuItemID(i)) {
                 feed = feedMenu.getFeed(i);
                 UpdateDisplay();
             }
         }
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
+        drawer.closeDrawer(GravityCompat.START);//關閉左拉選單
         return true;
     }
 
@@ -542,7 +541,7 @@ public class MainActivity extends AppCompatActivity
                     public void onClick(DialogInterface dialog, int id) {
                         // User clicked OK, so save the mSelectedItems results somewhere
                         // or return them to the component that opened the dialog
-                        for (int i = mSelectedItems.size() - 1; i > 0; i--) {
+                        for (int i = mSelectedItems.size() - 1; i > 0; i--) {       //Bubble sort
                             for (int j = 0; j < i; j++) {
                                 if (mSelectedItems.get(j) > mSelectedItems.get(j + 1)) {
                                     int temp = mSelectedItems.get(j);
@@ -604,7 +603,7 @@ public class MainActivity extends AppCompatActivity
                     public void onClick(DialogInterface dialog, int id) {
                         // User clicked OK, so save the mSelectedItems results somewhere
                         // or return them to the component that opened the dialog
-                        for (int i = mSelectedItems.size() - 1; i > 0; i--) {
+                        for (int i = mSelectedItems.size() - 1; i > 0; i--) {           //Bubble sort
                             for (int j = 0; j < i; j++) {
                                 if (mSelectedItems.get(j) > mSelectedItems.get(j + 1)) {
                                     int temp = mSelectedItems.get(j);
@@ -707,4 +706,12 @@ public class MainActivity extends AppCompatActivity
         return builder.create();
     }
     //endregion
+    public void showToast(final String toast)   //把它寫成function  有些時候可以避免Bug 例如在thread裡使用他
+    {
+        runOnUiThread(new Runnable() {
+            public void run() {
+                Toast.makeText(MainActivity.this, toast, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
 }

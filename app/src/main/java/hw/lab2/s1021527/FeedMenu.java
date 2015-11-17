@@ -9,7 +9,9 @@ import java.util.ArrayList;
 
 /**
  * Created by 睡睡 on 2015/10/28.
+*   這個class用來控制左拉式的選單
  */
+
 public class FeedMenu {
     //設定ID從100000開始
     //subMenID從10000開始
