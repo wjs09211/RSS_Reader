@@ -96,9 +96,7 @@ public class MainActivity extends AppCompatActivity
                 new Thread() {
                     @Override
                     public void run() {     //使用網路相關的功能要用thread android 4.0以上都要這樣，為了安全性
-                        feedNew = getFeed(str_Url);    //從URL取得目前feed
-                        if(feedNew != null)
-                            feed = feedNew;
+                        feed = getFeed(str_Url);    //從URL取得目前feed
                         Message msgg = new Message();//component要交給Handler處理
                         msgg.what = 1;
                         mHandler.sendMessage(msgg);
@@ -110,7 +108,7 @@ public class MainActivity extends AppCompatActivity
 
         load(); //讀檔
 
-        //region sever檢查跟新---接收broadcast
+        //region service檢查跟新---接收broadcast
         IntentFilter filter = new IntentFilter("myService"); //哪個key的訊息與Service對應
         MyReceiver Receiver = new MyReceiver();
         registerReceiver(Receiver, filter);     //註冊接收broadcast
@@ -322,7 +320,7 @@ public class MainActivity extends AppCompatActivity
         // 展示RSSFeed的RSSItems
         ListView itemlist = (ListView) findViewById(R.id.listView);
         addItem.setIcon(R.drawable.ic_grade_black);
-        if (feedNew == null)
+        if (feed == null)
         {
             feedtitle.setText("No RSS Feed Available");
             return;
@@ -345,8 +343,9 @@ public class MainActivity extends AppCompatActivity
 
         //點擊跳到ShowDescription畫面，顯示詳細資料
         itemlist.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            if(feed != null) {
                 Log.i("tag", "item clicked! [" + feed.getItem(position).getTitle() + "]");
 
                 Intent itemintent = new Intent(MainActivity.this, ShowDescription.class);
@@ -360,7 +359,8 @@ public class MainActivity extends AppCompatActivity
 
                 startActivityForResult(itemintent, 0);
             }
-        });
+        }
+    });
         // 默认选择第一个item
         itemlist.setSelection(0);
     }
@@ -497,7 +497,7 @@ public class MainActivity extends AppCompatActivity
             Dialog d = onCreateDialogAddGroup();
             d.show();
         }
-        else if( id == Menu.FIRST+100003 ){ //DeleteSubItem
+        else if( id == Menu.FIRST+100003 ){ //DeleteSubMenu
             Dialog d = onCreateDialogDeleteSubItem();
             d.show();
         }
@@ -651,7 +651,7 @@ public class MainActivity extends AppCompatActivity
                }
            });
     return builder.create();
-}
+    }
 
     public Dialog onCreateDialogAddGroup() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -706,6 +706,7 @@ public class MainActivity extends AppCompatActivity
         return builder.create();
     }
     //endregion
+
     public void showToast(final String toast)   //把它寫成function  有些時候可以避免Bug 例如在thread裡使用他
     {
         runOnUiThread(new Runnable() {
